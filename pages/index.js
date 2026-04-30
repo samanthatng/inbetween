@@ -1,7 +1,7 @@
 // pages/index.js
 import { useState, useEffect, useRef } from 'react';
 import Head from 'next/head';
-
+ 
 const CATEGORY_ICONS = {
   cafe: '☕',
   restaurant: '🍜',
@@ -10,9 +10,9 @@ const CATEGORY_ICONS = {
   mall: '🛍️',
   dessert: '🍦',
 };
-
+ 
 const PRICE_LABELS = ['', '$', '$$', '$$$', '$$$$'];
-
+ 
 function distKm(a, b) {
   const R = 6371;
   const dLat = (b.lat - a.lat) * Math.PI / 180;
@@ -21,11 +21,11 @@ function distKm(a, b) {
     Math.cos(a.lat * Math.PI / 180) * Math.cos(b.lat * Math.PI / 180) * Math.sin(dLng / 2) ** 2;
   return R * 2 * Math.atan2(Math.sqrt(x), Math.sqrt(1 - x));
 }
-
+ 
 function midpoint(a, b) {
   return { lat: (a.lat + b.lat) / 2, lng: (a.lng + b.lng) / 2 };
 }
-
+ 
 export default function Home() {
   const [postalA, setPostalA] = useState('');
   const [postalB, setPostalB] = useState('');
@@ -38,13 +38,13 @@ export default function Home() {
   const mapRef = useRef(null);
   const mapInstanceRef = useRef(null);
   const markersRef = useRef([]);
-
+ 
   // Init Google Map once results are available
   useEffect(() => {
     if (!results || !window.google) return;
-
+ 
     const { mid, coordA, coordB, venues } = results;
-
+ 
     if (!mapInstanceRef.current) {
       mapInstanceRef.current = new window.google.maps.Map(mapRef.current, {
         center: mid,
@@ -63,33 +63,33 @@ export default function Home() {
     } else {
       mapInstanceRef.current.setCenter(mid);
     }
-
+ 
     // Clear old markers
     markersRef.current.forEach(m => m.setMap(null));
     markersRef.current = [];
-
+ 
     const map = mapInstanceRef.current;
-
+ 
     // Pin A
     markersRef.current.push(new window.google.maps.Marker({
       position: coordA, map,
       label: { text: 'A', color: 'white', fontWeight: 'bold', fontSize: '12px' },
       icon: { path: window.google.maps.SymbolPath.CIRCLE, scale: 14, fillColor: '#3A7A6A', fillOpacity: 1, strokeColor: '#fff', strokeWeight: 2 },
     }));
-
+ 
     // Pin B
     markersRef.current.push(new window.google.maps.Marker({
       position: coordB, map,
       label: { text: 'B', color: 'white', fontWeight: 'bold', fontSize: '12px' },
       icon: { path: window.google.maps.SymbolPath.CIRCLE, scale: 14, fillColor: '#7BAF6F', fillOpacity: 1, strokeColor: '#fff', strokeWeight: 2 },
     }));
-
+ 
     // Midpoint
     markersRef.current.push(new window.google.maps.Marker({
       position: mid, map,
       icon: { path: window.google.maps.SymbolPath.CIRCLE, scale: 10, fillColor: '#4A7C45', fillOpacity: 1, strokeColor: '#fff', strokeWeight: 2.5 },
     }));
-
+ 
     // Venue markers
     venues.forEach((v, i) => {
       markersRef.current.push(new window.google.maps.Marker({
@@ -98,9 +98,9 @@ export default function Home() {
         icon: { path: window.google.maps.SymbolPath.CIRCLE, scale: 12, fillColor: '#1A2618', fillOpacity: 0.85, strokeColor: '#fff', strokeWeight: 1.5 },
       }));
     });
-
+ 
   }, [results]);
-
+ 
   async function handleFind() {
     setError('');
     if (!postalA || !postalB) {
@@ -111,60 +111,60 @@ export default function Home() {
       setError('Singapore postal codes are 6 digits, e.g. 068896');
       return;
     }
-
+ 
     setLoading(true);
     setResults(null);
-
+ 
     try {
       // Geocode both postal codes
       const [resA, resB] = await Promise.all([
         fetch(`/api/geocode?postal=${postalA}`).then(r => r.json()),
         fetch(`/api/geocode?postal=${postalB}`).then(r => r.json()),
       ]);
-
+ 
       if (resA.error) throw new Error(`Location A: ${resA.error}`);
       if (resB.error) throw new Error(`Location B: ${resB.error}`);
-
+ 
       const coordA = { lat: resA.lat, lng: resA.lng };
       const coordB = { lat: resB.lat, lng: resB.lng };
       const mid = midpoint(coordA, coordB);
       const dist = distKm(coordA, coordB);
-
+ 
       // Fetch venues near midpoint
       const venueRes = await fetch(`/api/venues?lat=${mid.lat}&lng=${mid.lng}&category=${category}`).then(r => r.json());
       if (venueRes.error) throw new Error(venueRes.error);
-
+ 
       // Add distance from midpoint to each venue
       const venues = venueRes.venues.map(v => ({
         ...v,
         distFromMid: distKm(mid, { lat: v.lat, lng: v.lng }),
       }));
-
+ 
       setResults({ coordA, coordB, mid, dist, venues, labelA: resA.address, labelB: resB.address });
-
+ 
       setTimeout(() => {
         document.getElementById('results-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
       }, 200);
-
+ 
     } catch (err) {
       setError(err.message || 'Something went wrong. Please try again.');
     } finally {
       setLoading(false);
     }
   }
-
+ 
   function copyLink() {
     navigator.clipboard.writeText(`https://inbetween.sg/r/${shareCode}`).then(() => {
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     });
   }
-
+ 
   function shareWhatsApp() {
     const url = encodeURIComponent(`https://inbetween.sg/r/${shareCode}`);
     window.open(`https://wa.me/?text=Hey%20I%20found%20our%20meetup%20spots%20%F0%9F%93%8D%20${url}`);
   }
-
+ 
   return (
     <>
       <Head>
@@ -179,7 +179,7 @@ export default function Home() {
           async
         />
       </Head>
-
+ 
       <style>{`
         *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
         :root {
@@ -191,7 +191,7 @@ export default function Home() {
         }
         html { scroll-behavior: smooth; }
         body { font-family: 'DM Sans', sans-serif; background: var(--cream); color: var(--dark); min-height: 100vh; font-size: 15px; line-height: 1.6; }
-
+ 
         nav {
           position: fixed; top: 0; left: 0; right: 0; z-index: 100;
           background: rgba(244,247,242,0.92); backdrop-filter: blur(12px);
@@ -205,14 +205,14 @@ export default function Home() {
         .nav-links a:hover { color: var(--dark); }
         .nav-cta { background: var(--accent); color: white; border: none; border-radius: 20px; padding: 7px 18px; font-size: 13px; font-weight: 500; cursor: pointer; transition: background 0.2s; font-family: 'DM Sans', sans-serif; }
         .nav-cta:hover { background: var(--accent-dark); }
-
+ 
         .hero { padding: 120px 2rem 80px; text-align: center; max-width: 680px; margin: 0 auto; }
         .hero-eyebrow { display: inline-flex; align-items: center; gap: 6px; background: var(--matcha-pale); color: var(--accent-dark); border-radius: 20px; padding: 5px 14px; font-size: 12px; font-weight: 500; letter-spacing: 0.3px; margin-bottom: 1.5rem; }
         .hero-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--matcha); }
         .hero h1 { font-family: 'Fraunces', serif; font-size: clamp(40px, 7vw, 64px); font-weight: 300; line-height: 1.1; letter-spacing: -1px; margin-bottom: 1rem; color: var(--dark); }
         .hero h1 em { font-style: italic; color: var(--matcha); }
         .hero p { font-size: 17px; color: var(--brown); max-width: 440px; margin: 0 auto 2.5rem; line-height: 1.7; font-weight: 300; }
-
+ 
         .card { background: var(--warm-white); border: 1px solid var(--sand); border-radius: 24px; padding: 2rem; max-width: 640px; margin: 0 auto; box-shadow: 0 4px 40px rgba(26,38,24,0.07); }
         .input-group { display: flex; flex-direction: column; gap: 10px; margin-bottom: 1.25rem; }
         .location-input { display: flex; align-items: center; gap: 10px; background: var(--cream); border: 1.5px solid var(--sand); border-radius: var(--radius-sm); padding: 12px 14px; transition: border-color 0.2s, box-shadow 0.2s; }
@@ -223,35 +223,35 @@ export default function Home() {
         .location-input input { border: none; background: transparent; font-family: 'DM Sans', sans-serif; font-size: 14px; color: var(--dark); flex: 1; outline: none; }
         .location-input input::placeholder { color: var(--tan); }
         .input-label { font-size: 11px; color: var(--brown); font-weight: 500; white-space: nowrap; }
-
+ 
         .divider-row { display: flex; align-items: center; gap: 10px; margin: 0 0 1.25rem; font-size: 11px; color: var(--tan); letter-spacing: 0.5px; }
         .divider-row::before, .divider-row::after { content: ''; flex: 1; height: 1px; background: var(--sand); }
-
+ 
         .chip-label { font-size: 12px; color: var(--brown); margin-bottom: 8px; font-weight: 500; }
         .chips { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 1.5rem; }
         .chip { display: flex; align-items: center; gap: 5px; padding: 7px 14px; border-radius: 20px; border: 1.5px solid var(--sand); background: var(--cream); font-size: 13px; color: var(--brown); cursor: pointer; transition: all 0.15s; font-family: 'DM Sans', sans-serif; font-weight: 400; }
         .chip.active { background: var(--dark); color: white; border-color: var(--dark); }
         .chip:hover:not(.active) { border-color: var(--matcha); color: var(--accent-dark); }
-
+ 
         .find-btn { width: 100%; padding: 15px; background: var(--accent); color: white; border: none; border-radius: var(--radius-sm); font-family: 'Fraunces', serif; font-size: 17px; font-weight: 400; font-style: italic; cursor: pointer; transition: background 0.2s, transform 0.1s; letter-spacing: -0.2px; }
         .find-btn:hover:not(:disabled) { background: var(--accent-dark); }
         .find-btn:active:not(:disabled) { transform: scale(0.99); }
         .find-btn:disabled { background: var(--tan); cursor: not-allowed; }
-
+ 
         .error-msg { margin-top: 12px; padding: 10px 14px; background: #fef0f0; border: 1px solid #f5c6c6; border-radius: var(--radius-sm); font-size: 13px; color: #c0392b; }
-
+ 
         .results-section { max-width: 640px; margin: 2rem auto 0; }
-
+ 
         .map-container { border-radius: var(--radius); height: 300px; overflow: hidden; position: relative; margin-bottom: 1.5rem; border: 1px solid var(--sand); }
         .map-container > div { width: 100%; height: 100%; }
         .midpoint-badge { position: absolute; bottom: 12px; left: 50%; transform: translateX(-50%); background: white; border-radius: 20px; padding: 6px 16px; font-size: 12px; font-weight: 500; color: var(--dark); box-shadow: 0 2px 12px rgba(0,0,0,0.12); display: flex; align-items: center; gap: 6px; white-space: nowrap; }
         .badge-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--matcha); flex-shrink: 0; }
-
+ 
         .venues-header { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 1rem; }
         .venues-header h2 { font-family: 'Fraunces', serif; font-size: 22px; font-weight: 400; letter-spacing: -0.3px; }
         .venues-header span { font-size: 12px; color: var(--brown); }
         .venues-grid { display: flex; flex-direction: column; gap: 10px; }
-
+ 
         .venue-card { background: var(--warm-white); border: 1px solid var(--sand); border-radius: var(--radius-sm); padding: 14px 16px; display: flex; align-items: center; gap: 14px; transition: border-color 0.2s, box-shadow 0.2s; text-decoration: none; color: inherit; }
         .venue-card:hover { border-color: var(--matcha); box-shadow: 0 2px 16px rgba(74,124,69,0.12); }
         .venue-card.featured { border-color: var(--accent); border-width: 1.5px; }
@@ -266,7 +266,7 @@ export default function Home() {
         .open-badge { font-size: 10px; font-weight: 500; background: #e8f5e9; color: #2e7d32; border-radius: 6px; padding: 2px 8px; }
         .closed-badge { font-size: 10px; font-weight: 500; background: #fce4e4; color: #c62828; border-radius: 6px; padding: 2px 8px; }
         .star { color: #7BAF6F; }
-
+ 
         .share-strip { margin-top: 1.5rem; margin-bottom: 4rem; background: var(--dark); border-radius: var(--radius); padding: 1.25rem 1.5rem; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; }
         .share-left h3 { font-family: 'Fraunces', serif; font-weight: 400; font-size: 16px; color: white; margin-bottom: 2px; }
         .share-left p { font-size: 12px; color: var(--sage); }
@@ -276,7 +276,7 @@ export default function Home() {
         .share-btn:hover { opacity: 0.85; }
         .share-btn.copy { background: rgba(255,255,255,0.12); color: white; }
         .share-btn.wa { background: #25D366; color: white; }
-
+ 
         .how-section { max-width: 640px; margin: 5rem auto 0; padding: 0 0 4rem; }
         .how-section h2 { font-family: 'Fraunces', serif; font-weight: 300; font-size: 32px; letter-spacing: -0.5px; margin-bottom: 2rem; text-align: center; }
         .how-section h2 em { font-style: italic; color: var(--matcha); }
@@ -285,18 +285,18 @@ export default function Home() {
         .step-num { width: 32px; height: 32px; border-radius: 50%; background: var(--matcha-pale); color: var(--accent-dark); font-weight: 500; font-size: 13px; display: flex; align-items: center; justify-content: center; margin: 0 auto 0.75rem; }
         .step p { font-size: 13px; color: var(--brown); line-height: 1.6; }
         .step strong { display: block; font-size: 14px; color: var(--dark); margin-bottom: 4px; }
-
+ 
         footer { border-top: 1px solid var(--sand); padding: 1.5rem 2rem; text-align: center; font-size: 12px; color: var(--tan); }
         footer a { color: var(--brown); text-decoration: none; }
-
+ 
         .spinner { display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: white; margin: 0 2px; animation: bounce 1.2s infinite ease-in-out; }
         .spinner:nth-child(2) { animation-delay: 0.2s; }
         .spinner:nth-child(3) { animation-delay: 0.4s; }
         @keyframes bounce { 0%,80%,100%{transform:scale(0.6);opacity:0.4} 40%{transform:scale(1);opacity:1} }
-
+ 
         @keyframes fadeUp { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
         .fade-up { animation: fadeUp 0.4s ease forwards; }
-
+ 
         @media (max-width: 600px) {
           nav { padding: 0 1rem; }
           .hero { padding: 90px 1rem 50px; }
@@ -306,7 +306,7 @@ export default function Home() {
           .share-strip { flex-direction: column; align-items: flex-start; }
         }
       `}</style>
-
+ 
       {/* NAV */}
       <nav>
         <div className="nav-logo">in<span>between</span>.sg</div>
@@ -315,14 +315,14 @@ export default function Home() {
           <button className="nav-cta" onClick={() => document.querySelector('.card')?.scrollIntoView({ behavior: 'smooth' })}>try it</button>
         </div>
       </nav>
-
+ 
       {/* HERO */}
       <section className="hero">
         <div className="hero-eyebrow"><div className="hero-dot" /> Singapore's meetup recommender</div>
         <h1>Meet me <em>halfway</em></h1>
         <p>Enter where you both are. We find the perfect spot in between — no more "you come to me" negotiations.</p>
       </section>
-
+ 
       {/* MAIN CARD */}
       <div className="card">
         <div className="input-group">
@@ -349,9 +349,9 @@ export default function Home() {
             <span className="input-label">Friend</span>
           </div>
         </div>
-
+ 
         <div className="divider-row">LOOKING FOR</div>
-
+ 
         <div className="chip-label">What kind of place?</div>
         <div className="chips">
           {Object.entries(CATEGORY_ICONS).map(([cat, icon]) => (
@@ -360,20 +360,20 @@ export default function Home() {
             </button>
           ))}
         </div>
-
+ 
         <button className="find-btn" disabled={loading} onClick={handleFind}>
           {loading
             ? <span><span className="spinner" /><span className="spinner" /><span className="spinner" /></span>
             : 'find our inbetween →'}
         </button>
-
+ 
         {error && <div className="error-msg">{error}</div>}
       </div>
-
+ 
       {/* RESULTS */}
       {results && (
         <div className="results-section fade-up" id="results-section">
-
+ 
           {/* MAP */}
           <div className="map-container">
             <div ref={mapRef} />
@@ -382,13 +382,13 @@ export default function Home() {
               <span>{results.dist.toFixed(1)} km apart · midpoint found</span>
             </div>
           </div>
-
+ 
           {/* VENUES */}
           <div className="venues-header">
             <h2>Spots near the middle</h2>
             <span>{results.venues.length} place{results.venues.length !== 1 ? 's' : ''} found</span>
           </div>
-
+ 
           <div className="venues-grid">
             {results.venues.length === 0 && (
               <p style={{ color: 'var(--brown)', fontSize: 14 }}>No {category}s found near the midpoint. Try a different category.</p>
@@ -397,7 +397,7 @@ export default function Home() {
               <a
                 key={v.placeId}
                 className={`venue-card${i === 0 ? ' featured' : ''}`}
-                href={`https://www.google.com/maps/place/?q=place_id:${v.placeId}`}
+                href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(v.name)}&query_place_id=${v.placeId}`}
                 target="_blank"
                 rel="noopener noreferrer"
               >
@@ -418,7 +418,7 @@ export default function Home() {
               </a>
             ))}
           </div>
-
+ 
           {/* SHARE */}
           <div className="share-strip">
             <div className="share-left">
@@ -433,7 +433,7 @@ export default function Home() {
           </div>
         </div>
       )}
-
+ 
       {/* HOW IT WORKS */}
       <section className="how-section" id="how">
         <h2>how it <em>works</em></h2>
@@ -455,7 +455,7 @@ export default function Home() {
           </div>
         </div>
       </section>
-
+ 
       <footer>
         <p>© 2025 inbetween.sg &nbsp;·&nbsp; <a href="#">about</a> &nbsp;·&nbsp; <a href="#">contact</a> &nbsp;·&nbsp; Built in Singapore 🇸🇬</p>
       </footer>
