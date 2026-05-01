@@ -391,7 +391,7 @@ export default function Home() {
             <div className="loc-dot b" />
             <input
               type="text" inputMode="numeric" maxLength={6}
-              placeholder="Friend's postal code (e.g. 310123)"
+              placeholder="Friend's postal code or just enter yours for now (e.g. 310123)"
               value={postalB}
               onChange={e => setPostalB(e.target.value.replace(/\D/g, ''))}
               onKeyDown={e => e.key === 'Enter' && handleFind()}
